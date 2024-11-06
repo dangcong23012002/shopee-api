@@ -11,8 +11,8 @@ public class ProductViewModel {
     public IEnumerable<UserInfo> UserInfos { get; set; }
     public IEnumerable<Checkout> Checkouts { get; set; }
     public IEnumerable<Reviewer> Reviewers { get; set; }
-    public Product Product { get; set; }
-    public Store Store { get; set; }
+    public IEnumerable<Product> Product { get; set; }
+    public IEnumerable<Store> Store { get; set; }
     public int UserID { get; set; }
     public int TotalPage { get; set; }
     public int CurrentPage { get; set; }

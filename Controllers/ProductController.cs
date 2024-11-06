@@ -43,33 +43,37 @@ public class ProductController : Controller {
         return Ok(model);
     }
 
-    [HttpPost]
-    [Route("/product/get-data-detail")]
-    public IActionResult GetDetail() {
-        var sessionUserID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        var sessionCurrentProductID = _accessor?.HttpContext?.Session.GetInt32("CurrentProductID");
-        var product = _productResponsitory.getProductByID(Convert.ToInt32(sessionCurrentProductID));
-        List<Store> store = _shopResponsitory.getShopByProductID(Convert.ToInt32(sessionCurrentProductID)).ToList();
-        IEnumerable<UserInfo> userInfos = _userResponsitory.checkUserInfoByUserID(Convert.ToInt32(sessionUserID));
-        IEnumerable<Reviewer> reviewers = _productResponsitory.getReviewerByProductID(Convert.ToInt32(sessionCurrentProductID));
-        Store storeDetail = new Store {
-            PK_iStoreID = store[0].PK_iStoreID,
-            sStoreName = store[0].sStoreName,
-            sImageAvatar = store[0].sImageAvatar,
-            sImageLogo = store[0].sImageLogo,
-            sImageBackground = store[0].sImageBackground,
-            sDesc = store[0].sDesc
-        };
+    [HttpGet]
+    [Route("/product/detail/{productID?}")]
+    public IActionResult Detail(int productID = 0, int userID = 0) {
+        IEnumerable<Product> product = _productResponsitory.getProductByID(productID).ToList();
+        Status status;
+        if (product.Count() == 0) {
+            status = new Status {
+                StatusCode = -1,
+                Message = "Không có sản phẩm mã là: " + productID
+            };
+        } else {
+            status = new Status {
+                StatusCode = 1,
+                Message = "Có sản phẩm mã là: " + productID
+            };
+        }
+        List<Store> store = _shopResponsitory.getShopByProductID(productID).ToList();
+        IEnumerable<UserInfo> userInfos = _userResponsitory.checkUserInfoByUserID(Convert.ToInt32(userID));
+        IEnumerable<Reviewer> reviewers = _productResponsitory.getReviewerByProductID(Convert.ToInt32(userID));
         ProductViewModel model = new ProductViewModel {
+            Status = status,
             Products = product,
-            Store = storeDetail,
+            Store = store,
             UserInfos = userInfos,
             Reviewers = reviewers
         };
         return Ok(model);
     }
 
-    [Route("sort/{categoryID?}/{sortType?}")]
+    [HttpGet]
+    [Route("/product/sort/{categoryID?}/{sortType?}")]
     public IActionResult Sort(int categoryID, string sortType = "") {
         IEnumerable<Product> products;
         var userID = _accessor?.HttpContext?.Session.GetInt32("UserID");
@@ -102,36 +106,19 @@ public class ProductController : Controller {
         return View(model);
     }
 
-    [HttpPost]
-    [Route("/product/similar/get-data")]
-    public IActionResult Similar(int currentPage = 1) {
-        var sessionProductSimilarID = _accessor?.HttpContext?.Session.GetInt32("ProductSimilarID");
-        var sessionCategorySimilarID = _accessor?.HttpContext?.Session.GetInt32("CategorySimilarID");
-        List<Product> product = _productResponsitory.getProductByID(Convert.ToInt32(sessionProductSimilarID)).ToList();
-        List<Store> store = _shopResponsitory.getShopByProductID(Convert.ToInt32(sessionProductSimilarID)).ToList();
-        IEnumerable<Product> products = _productResponsitory.getProductsByCategoryID(Convert.ToInt32(sessionCategorySimilarID));
-        Product productDetail = new Product {
-            PK_iProductID = product[0].PK_iProductID,
-            sProductName = product[0].sProductName,
-            sImageUrl = product[0].sImageUrl,
-            dPrice = product[0].dPrice,
-            dPerDiscount = product[0].dPerDiscount
-        };
-        Store storeDetail = new Store {
-            PK_iStoreID = store[0].PK_iStoreID,
-            sStoreName = store[0].sStoreName,
-            sImageAvatar = store[0].sImageAvatar,
-            sImageLogo = store[0].sImageLogo,
-            sImageBackground = store[0].sImageBackground,
-            sDesc = store[0].sDesc
-        };
+    [HttpGet]
+    [Route("/product/similar/{productID?}")]
+    public IActionResult Similar(int productSimilarID = 0, int currentPage = 1, int categorySimilar = 0) {
+        List<Product> product = _productResponsitory.getProductByID(productSimilarID).ToList();
+        List<Store> store = _shopResponsitory.getShopByProductID(productSimilarID).ToList();
+        IEnumerable<Product> products = _productResponsitory.getProductsByCategoryID(categorySimilar);
         int totalRecord = products.Count();
         int pageSize = 6;
         int totalPage = (int) Math.Ceiling(totalRecord / (double) pageSize);
         products = products.Skip((currentPage - 1) * pageSize).Take(pageSize);
         ProductViewModel model = new ProductViewModel {
-            Product = productDetail,
-            Store = storeDetail,
+            Product = product,
+            Store = store,
             Products = products,
             TotalPage = totalPage,
             PageSize = pageSize,
