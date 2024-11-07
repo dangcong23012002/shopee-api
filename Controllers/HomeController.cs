@@ -77,7 +77,7 @@ namespace Project.Controllers
         }
 
         [HttpGet]
-        [Route("/home/search")]
+        [Route("/home/search/{keyword?}")]
         public IActionResult Search(string keyword = "") {
             IEnumerable<ParentCategory> parentCategories = _categoryResponsitory.searchParentCategoriesByKeyword(keyword);
             IEnumerable<Category> categories = _categoryResponsitory.searchCategoriesByKeyword(keyword).ToList();
