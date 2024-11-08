@@ -22,71 +22,36 @@ public class UserController : Controller {
         _orderResponsitory = orderResponsitory;
     }
 
-    [Route("/user/login")]
-    [HttpGet("/user/login")]
-    public IActionResult Login() {
-        string password = "1";
-        string encrypted = _userResponsitory.encrypt(password);
-        string decryted = _userResponsitory.decrypt(encrypted);
-        System.Console.WriteLine("Mat khau ma hoa: " + encrypted);
-        System.Console.WriteLine("Mat khau giai ma: " + decryted);
-        return View();
-    }
-
-    [HttpPost]
-    [Route("/user/login")]
-    public IActionResult Login(LoginModel user) {
-        if (!ModelState.IsValid) {
-            return View(user);
+    [Route("/user/login/{email?}/{password?}")]
+    [HttpGet]
+    public IActionResult Login(string email = "", string password = "") {
+        string passwordEncrypted = _userResponsitory.encrypt(password);
+        List<User> userLogin = _userResponsitory.login(email, passwordEncrypted).ToList();
+        Status status;
+        if (userLogin.Count() != 0 ) {
+            status = new Status {
+                StatusCode = 1,
+                Message = "Đăng nhập thành công!"
+            };
+        } else {
+            status = new Status {
+                StatusCode = -1,
+                Message = "Tên đăng nhập hoặc mật khẩu không chính xác!"
+            };
         }
-        string passwordEncrypted = _userResponsitory.encrypt(user.sPassword);
-        List<User> userLogin = _userResponsitory.login(user.sEmail, passwordEncrypted).ToList();
-        if (userLogin.Count() == 0) {
-            TempData["msg"] = "Tài khoản hoặc mật khẩu không chính xác!";
-            return Redirect("/user/login");
-        }
-        string nameUser = userLogin[0].sUserName;
-        int value = userLogin[0].PK_iUserID;
-        // Tạo Cookies
-        CookieOptions options = new CookieOptions {
-            Expires = DateTime.Now.AddDays(1),
-            Secure = true, // Khi Hacker lấy cookies sẽ không thể lấy
-            HttpOnly = true,       
-            SameSite = SameSiteMode.None, // Đọc thêm về SameSite (cùng trang): https://developers.google.com/search/blog/2020/01/get-ready-for-new-samesitenone-secure?hl=vi
-            Path = "/",
-            IsEssential = true
+        DataViewModel model = new DataViewModel {
+            Status = status,
+            RoleID = userLogin[0].FK_iRoleID,
+            UserID = userLogin[0].PK_iUserID,
+            Username = userLogin[0].sUserName,
         };
-        Response.Cookies.Append("UserID", value.ToString(), options);
-        _accessor?.HttpContext?.Session.SetString("UserName", nameUser);
-        //_accessor?.HttpContext?.Session.SetInt32("UserID", userLogin[0].PK_iUserID);
-
-        // Lấy số lượng giỏ hàng
-        // var userID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        // var userID = Request.Cookies["UserID"];
-        // IEnumerable<CartDetail> carts = _cartResponsitory.getCartInfo(Convert.ToInt32(userID));
-        // int cartCount = carts.Count();
-        // _accessor?.HttpContext?.Session.SetInt32("CartCount", cartCount);
-
-        // return Json(user);
-        List<UserInfo> userInfo = _userResponsitory.checkUserInfoByUserID(userLogin[0].PK_iUserID).ToList();
-        if (userInfo.Count == 0) {
-            _accessor?.HttpContext?.Session.SetInt32("UserID", userLogin[0].PK_iUserID);
-            return Redirect("/user/portal");
-        }
-        return Redirect("/");
+        return Ok(model);
     }
 
     [HttpGet]
-    [Route("/user/portal")]
-    public IActionResult Portal() {
-        return View();
-    }
-
-    [HttpPost]
-    [Route("/user/get-data-portal")]
-    public IActionResult GetDataPortal() {
-        var sessionUserID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        IEnumerable<User> users = _userResponsitory.checkUserLogin(Convert.ToInt32(sessionUserID));
+    [Route("/user/portal/{userID?}")]
+    public IActionResult Portal(int userID = 0) {
+        IEnumerable<User> users = _userResponsitory.checkUserLogin(userID);
         ShopeeViewModel model = new ShopeeViewModel {
             Users = users
         };
@@ -106,25 +71,26 @@ public class UserController : Controller {
     }
 
     [HttpGet]
-    [Route("/user/forgot")]
-    public IActionResult Forgot() {
-        return View();
-    }
-
-    [Route("/user/forgot")]
-    [HttpPost]
-    public IActionResult Forgot(ForgotViewModel forgotViewModel) {
-        if (!ModelState.IsValid) {
-            return View(forgotViewModel);
-        }
-        List<User> user = _userResponsitory.getPassswordAccountByEmail(forgotViewModel.sEmail).ToList();
+    [Route("/user/forgot/{email?}")]
+    public IActionResult Forgot(string email = "") {
+        List<User> user = _userResponsitory.getPassswordAccountByEmail(email).ToList();
+        Status status;
         if (user.Count() == 0) {
-            TempData["result"] = "Không có Email này, vui lòng nhập lại";
+            status = new Status {
+                StatusCode = -1,
+                Message = "Không có Email này, vui lòng điền lại!"
+            };
         } else {
             string passwordDecrypted = _userResponsitory.decrypt(user[0].sPassword);
-            TempData["result"] = $"Mật khẩu của bạn là: {passwordDecrypted}";
+            status = new Status {
+                StatusCode = 1,
+                Message = "Mật khẩu của tài khoản " + email + " là: " + passwordDecrypted
+            };
         }
-        return RedirectToAction("Forgot");
+        DataViewModel model = new DataViewModel {
+            Status = status
+        };
+        return Ok(model);
     }
 
     [Route("/user/change")]
@@ -145,25 +111,16 @@ public class UserController : Controller {
         return RedirectToAction("Change");
     }
 
-    [Route("/user/profile")]
+    [Route("/user/profile/{userID?}")]
     [HttpGet]
-    public IActionResult Profile() {
-        // Lấy Cookies trên trình duyệt
-        var userID = Request.Cookies["UserID"];
-        if (userID != null)
+    public IActionResult Profile(int userID = 0) {
+        List<UserInfo> userInfo = _userResponsitory.getUserInfoByID(userID).ToList();
+        DataViewModel model = new DataViewModel
         {
-            _accessor?.HttpContext?.Session.SetInt32("UserID", Convert.ToInt32(userID));
-        }
-        // Phải Refresh lại trang chủ thì mới lấy được sessionUserID
-        var sessionUserID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        System.Console.WriteLine("sessionUserID: " + sessionUserID);
-        IEnumerable<UserInfo> userInfos = _userResponsitory.getUserInfoByID(Convert.ToInt32(sessionUserID));
-        ShopeeViewModel model = new ShopeeViewModel
-        {
-            UserID = Convert.ToInt32(sessionUserID),
-            UserInfos = userInfos
+            UserID = userInfo[0].FK_iUserID,
+            UserInfo = userInfo
         };
-        return View(model);
+        return Ok(model);
     }
 
     [Route("/user/update-profile")]

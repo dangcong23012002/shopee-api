@@ -24,13 +24,13 @@ public class ProductResponsitory : IProductResponsitory {
     public IEnumerable<Product> getProductsByCategoryIDAndSortIncre(int categoryID)
     {
         SqlParameter categoryIDParam = new SqlParameter("@FK_iCategoryID", categoryID);
-        return _context.Products.FromSqlRaw("sp_SelectProductsByCategoryIDAndSortIncre @FK_iCategoryID", categoryIDParam);
+        return _context.Products.FromSqlRaw("EXEC sp_SelectProductsByCategoryIDAndSortIncre @FK_iCategoryID", categoryIDParam);
     }
 
     public IEnumerable<Product> getProductsByCategoryIDAndSortReduce(int categoryID)
     {
         SqlParameter categoryIDParam = new SqlParameter("@FK_iCategoryID", categoryID);
-        return _context.Products.FromSqlRaw("sp_SelectProductsByCategoryIDAndSortReduce @FK_iCategoryID", categoryIDParam); // Đúng tên thủ tục lưu sắp xếp giảm dần
+        return _context.Products.FromSqlRaw("EXEC sp_SelectProductsByCategoryIDAndSortReduce @FK_iCategoryID", categoryIDParam); // Đúng tên thủ tục lưu sắp xếp giảm dần
     }
 
     public IEnumerable<Product> getProductsByCategoryIDIfRoleAdmin(int categoryID)

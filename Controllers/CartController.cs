@@ -19,62 +19,22 @@ public class CartController : Controller {
         _userResponsitory = userResponsitory;
     }
 
-    [Route("cart")]
+    [Route("/cart/{userID?}")]
     [HttpGet]
-    public IActionResult Index() {
-        // Lấy Cookies trên trình duyệt
-        var userID = Request.Cookies["UserID"];
-        if (userID != null)
-        {
-            _accessor?.HttpContext?.Session.SetInt32("UserID", Convert.ToInt32(userID));
-        } else {
-            return View();
-        }
-        var sessionUserID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        if (sessionUserID != null)
-        {
-            List<User> users = _userResponsitory.checkUserLogin(Convert.ToInt32(sessionUserID)).ToList();
-            _accessor?.HttpContext?.Session.SetString("UserName", users[0].sUserName);
-            _accessor?.HttpContext?.Session.SetInt32("RoleID", users[0].FK_iRoleID);
-        }
-        else
-        {
-            _accessor?.HttpContext?.Session.SetString("UserName", "");
-        }
-        System.Console.WriteLine("UserID: " + userID);
-        if (sessionUserID == 0) {
-            return Redirect("/user/login");
-        }
-        IEnumerable<Store> stores = _homeResponsitory.getStores();
-        IEnumerable<CartDetail> carts = _cartResponsitory.getCartInfo(Convert.ToInt32(sessionUserID)); 
-        // Lấy số lượng giỏ hàng
-        int cartCount = carts.Count();
-        ShopeeViewModel model = new ShopeeViewModel {
-            Stores = stores,
-            CartDetails = carts,
-            CartCount = cartCount
-        };
-        return View(model); 
-    }
-
-    [HttpPost]
-    [Route("/cart")]
-    public IActionResult GetCartInfo() {
-        var sessionUserID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        var sessionUsername = _accessor?.HttpContext?.Session.GetString("UserName");  
-        var sessionRoleID = _accessor?.HttpContext?.Session.GetInt32("RoleID");
-        IEnumerable<CartDetail> carts = _cartResponsitory.getCartInfo(Convert.ToInt32(sessionUserID)); 
+    public IActionResult Index(int userID = 0) {
+        List<User> user = _userResponsitory.checkUserLogin(userID).ToList();
+        IEnumerable<CartDetail> carts = _cartResponsitory.getCartInfo(userID); 
         IEnumerable<Product> get12ProductsAndSortAsc = _cartResponsitory.get12ProductsAndSortAsc(); 
         int cartCount = carts.Count();
         CartViewModel model = new CartViewModel {
             CartDetails = carts,
             Get12ProductsAndSortAsc = get12ProductsAndSortAsc,
             CartCount = cartCount,
-            RoleID = Convert.ToInt32(sessionRoleID),
-            UserID = Convert.ToInt32(sessionUserID),
-            Username = sessionUsername
+            RoleID = user[0].FK_iRoleID,
+            UserID = userID,
+            Username = user[0].sUserName
         };
-        return Json(model);  
+        return Ok(model);
     }
 
     [HttpPost]

@@ -74,15 +74,14 @@ public class ProductController : Controller {
 
     [HttpGet]
     [Route("/product/sort/{categoryID?}/{sortType?}")]
-    public IActionResult Sort(int categoryID, string sortType = "") {
+    public IActionResult Sort(int userID = 0, int categoryID = 0, string sortType = "") {
         IEnumerable<Product> products;
-        var userID = _accessor?.HttpContext?.Session.GetInt32("UserID");
         if (sortType == "asc") {
             products = _productResponsitory.getProductsByCategoryIDAndSortIncre(categoryID); // Gọi đúng phương thức sắp xếp tăng dần nhé
         } else {
             products = _productResponsitory.getProductsByCategoryIDAndSortReduce(categoryID); // Gọi đúng phương thức sắp xếp giảm dần nhé
         }
-        IEnumerable<CartDetail> cartDetails = _cartResponsitory.getCartInfo(Convert.ToInt32(userID));
+        IEnumerable<CartDetail> cartDetails = _cartResponsitory.getCartInfo(userID);
         IEnumerable<Category> categories = _homeResponsitory.getCategories();
         ProductViewModel model = new ProductViewModel {
             Products = products,
@@ -90,20 +89,7 @@ public class ProductController : Controller {
             Categories = categories,
             CurrentCategoryID = categoryID
         };
-        //return Json(model);
-        return View("Index", model);
-    }
-
-    [HttpGet]
-    [Route("/product/similar/{productSimilarID?}/{categorySimilar?}")]
-    public IActionResult Similar(int productSimilarID, int categorySimilar)
-    {
-        _accessor?.HttpContext?.Session.SetInt32("ProductSimilarID", productSimilarID);
-        _accessor?.HttpContext?.Session.SetInt32("CategorySimilarID", categorySimilar);
-        ShopeeViewModel model = new ShopeeViewModel {
-            
-        };
-        return View(model);
+        return Ok(model);
     }
 
     [HttpGet]
