@@ -10,11 +10,11 @@ public class ChatRepository : IChatRepository
         _context = context;
     }
 
-    public IEnumerable<MakeNotice> getMakeNoticeByUserIDAndShopID(int userID, int shopID)
+    public IEnumerable<MakeFriend> getMakeFriendByUserIDAndShopID(int userID, int shopID)
     {
         SqlParameter userIDParam = new SqlParameter("@FK_iUserID", userID);
         SqlParameter shopIDParam = new SqlParameter("@FK_iShopID", shopID);
-        return _context.MakeNotices.FromSqlRaw("EXEC sp_GetMakeNoticeByUserIDAndShopID @FK_iUserID, @FK_iShopID", userIDParam, shopIDParam);
+        return _context.MakeFriends.FromSqlRaw("EXEC sp_GetMakeFriendByUserIDAndShopID @FK_iUserID, @FK_iShopID", userIDParam, shopIDParam);
     }
 
     public bool insertMakeNoice(int userID, int sellerID)

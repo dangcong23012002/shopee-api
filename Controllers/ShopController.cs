@@ -31,62 +31,31 @@ public class ShopController : Controller
         }
 
     [HttpGet]
-    [Route("/shop/{shopUsername?}")]
-    public IActionResult Index(string shopUsername = "") {
-        // Lấy Cookies trên trình duyệt
-        var userID = Request.Cookies["UserID"];
-        if (userID != null)
-        {
-            _accessor?.HttpContext?.Session.SetInt32("UserID", Convert.ToInt32(userID));
-        }
-        var sessionUserID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        System.Console.WriteLine("sessionUserID: " + sessionUserID);
-        if (userID != null)
-        {
-            List<User> users = _userResponsitory.checkUserLogin(Convert.ToInt32(sessionUserID)).ToList();
-            _accessor?.HttpContext?.Session.SetString("UserName", users[0].sUserName);
-            _accessor?.HttpContext?.Session.SetInt32("RoleID", users[0].FK_iRoleID);
-        }
-        else
-        {
-            _accessor?.HttpContext?.Session.SetString("UserName", "");
-        }
-        List<Store> store = _shopResponsitory.getShopByUsername(shopUsername).ToList();
-        _accessor?.HttpContext?.Session.SetInt32("CurrentShopID", store[0].PK_iStoreID);
-        _accessor?.HttpContext?.Session.SetString("CurrentShopUsername", shopUsername);
-        return View();
-    }
-
-    [HttpPost]
-    [Route("/shop/get-data")]
-    public IActionResult GetData(int currentPage = 1, int categoryID = 0) {
-        var sessionUserID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        var sessionUsername = _accessor?.HttpContext?.Session?.GetString("UserName");
-        var sessionRoleID = _accessor?.HttpContext?.Session?.GetInt32("RoleID");
-        var sessionCurrentShopUsername = _accessor?.HttpContext?.Session.GetString("CurrentShopUsername");
-        var sessionCurrentShopID = _accessor?.HttpContext?.Session.GetInt32("CurrentShopID");
-        var shop = _shopResponsitory.getShopByUsername(sessionCurrentShopUsername);
-        IEnumerable<MakeNotice> makeNotices = _chatRepository.getMakeNoticeByUserIDAndShopID(Convert.ToInt32(sessionUserID), Convert.ToInt32(sessionCurrentShopID));
+    [Route("/shop/{shopUsername?}/{userID?}")]
+    public IActionResult Index(string shopUsername = "", int currentPage = 1, int userID = 0, int categoryID = 0) {
+        List<User> user = _userResponsitory.checkUserLogin(userID).ToList();
+        List<Store> shop = _shopResponsitory.getShopByUsername(shopUsername).ToList();
+        IEnumerable<MakeFriend> makeFriends = _chatRepository.getMakeFriendByUserIDAndShopID(userID, shop[0].PK_iStoreID);
         IEnumerable<Product> products;
-        IEnumerable<CartDetail> cartDetails = _cartResponsitory.getCartInfo(Convert.ToInt32(sessionUserID));
-        IEnumerable<SliderShop> slidersShop = _shopResponsitory.getSlidersShopByShopID(Convert.ToInt32(sessionCurrentShopID));
-        IEnumerable<Category> categories = _shopResponsitory.getCategoriesByShopID(Convert.ToInt32(sessionCurrentShopID));
+        IEnumerable<CartDetail> cartDetails = _cartResponsitory.getCartInfo(Convert.ToInt32(userID));
+        IEnumerable<SliderShop> slidersShop = _shopResponsitory.getSlidersShopByShopID(shop[0].PK_iStoreID);
+        IEnumerable<Category> categories = _shopResponsitory.getCategoriesByShopID(shop[0].PK_iStoreID);
         if (categoryID != 0) {
-            products = _productResponsitory.getProductsByCategoryID(Convert.ToInt32(categoryID));
+            products = _productResponsitory.getProductsByCategoryID(categoryID);
         } else {
-            products = _shopResponsitory.getProductsByShopID(Convert.ToInt32(sessionCurrentShopID));
+            products = _shopResponsitory.getProductsByShopID(shop[0].PK_iStoreID);
         }
-        IEnumerable<Product> top3SellingProducts = _shopResponsitory.getTop3SellingProductsShop(Convert.ToInt32(sessionCurrentShopID));
-        IEnumerable<Product> top10SellingProducts = _shopResponsitory.getTop10SellingProductsShop(Convert.ToInt32(sessionCurrentShopID));
-        IEnumerable<Product> top10GoodPriceProducts = _shopResponsitory.getTop10GoodPriceProductsShop(Convert.ToInt32(sessionCurrentShopID));
-        IEnumerable<Product> top10SuggestProducts = _shopResponsitory.getTop10SuggestProductsShop(Convert.ToInt32(sessionCurrentShopID));
+        IEnumerable<Product> top3SellingProducts = _shopResponsitory.getTop3SellingProductsShop(shop[0].PK_iStoreID);
+        IEnumerable<Product> top10SellingProducts = _shopResponsitory.getTop10SellingProductsShop(shop[0].PK_iStoreID);
+        IEnumerable<Product> top10GoodPriceProducts = _shopResponsitory.getTop10GoodPriceProductsShop(shop[0].PK_iStoreID);
+        IEnumerable<Product> top10SuggestProducts = _shopResponsitory.getTop10SuggestProductsShop(shop[0].PK_iStoreID);
         int totalRecord = products.Count();
         int pageSize = 10;
         int totalPage = (int) Math.Ceiling(totalRecord / (double) pageSize);
         products = products.Skip((currentPage - 1) * pageSize).Take(pageSize);
         ShopViewModel model = new ShopViewModel {
             Stores = shop,
-            MakeNotices = makeNotices,
+            MakeFriends = makeFriends,
             SlidersShop = slidersShop,
             Categories = categories,
             Products = products,
@@ -97,9 +66,9 @@ public class ShopController : Controller
             TotalPage = totalPage,
             PageSize = pageSize,
             CurrentPage = currentPage,
-            RoleID = Convert.ToInt32(sessionRoleID),
-            UserID = Convert.ToInt32(sessionUserID),
-            Username = sessionUsername,
+            RoleID = user[0].FK_iRoleID,
+            UserID = user[0].PK_iUserID,
+            Username = user[0].sUserName,
             CartDetails = cartDetails,
             CartCount = cartDetails.Count(),
             CurrentCategoryID = categoryID
