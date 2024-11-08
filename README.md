@@ -14,6 +14,20 @@ http://localhost:5041/home/suggest
 http://localhost:5041/product?parentCategoryID=1
 ## 5. Chi tiết sản phẩm
 http://localhost:5041/product/detail?productID=2
+## 6. Lấy sản phẩm theo mã danh mục và sắp xếp theo giá tăng dần
+http://localhost:5041/product/sort/?categoryID=1&sortType=asc
+## 7. Lấy sản phẩm theo mã danh mục và sắp xếp theo giá giảm dần
+http://localhost:5041/product/sort/?categoryID=1&sortType=desc
+## 8. Cửa hàng
+http://localhost:5041/shop?shopUsername=laneige.vn&userID=1
+## 9. Giỏ hàng
+http://localhost:5041/cart?userID=1
+## 10. Đăng nhập tài khoản
+http://localhost:5041/user/login?email=cong@gmail.com&password=1
+## 11. Lấy mật khẩu tài khoản với email
+http://localhost:5041/user/forgot?email=cong@gmail.com
+## 12. Hồ sơ tài khoản
+http://localhost:5041/user/profile?userID=1
 
 
 
