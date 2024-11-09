@@ -22,6 +22,22 @@ public class UserController : Controller {
         _orderResponsitory = orderResponsitory;
     }
 
+    [HttpGet]
+    [Route("/user")]
+    public IActionResult Index(int userID = 0) {
+        IEnumerable<User> users = _userResponsitory.getUsers();
+        IEnumerable<UserInfo> userInfos = _userResponsitory.getUsersInfo();
+        IEnumerable<User> user = _userResponsitory.checkUserLogin(userID);
+        IEnumerable<UserInfo> userInfo = _userResponsitory.checkUserInfoByUserID(userID);
+        DataViewModel model = new DataViewModel {
+            Users = users,
+            UserInfos = userInfos,
+            User = user,
+            UserInfo = userInfo
+        };
+        return Ok(model);
+    }
+
     [Route("/user/login/{email?}/{password?}")]
     [HttpGet]
     public IActionResult Login(string email = "", string password = "") {
@@ -125,9 +141,8 @@ public class UserController : Controller {
 
     [Route("/user/update-profile")]
     [HttpPost] 
-    public IActionResult UpdateProfile(string fullName = "", int gender = 0, string birth = "", string image = "") {
-        var sessionUserID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        _userResponsitory.updateUserInfoByID(Convert.ToInt32(sessionUserID), fullName, gender, birth, image);
+    public IActionResult UpdateProfile(int userID = 0, string fullName = "", int gender = 0, string birth = "", string image = "") {
+        _userResponsitory.updateUserInfoByID(userID, fullName, gender, birth, image);
         Status status = new Status {
             StatusCode = 1,
             Message = "Cập nhật thành công"

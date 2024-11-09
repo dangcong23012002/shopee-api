@@ -36,21 +36,18 @@ public class SellerController : Controller
 
     [HttpGet]
     [Route("/seller")]
-    public IActionResult Index() {
-        // Lấy Cookie trên trình duyệt
-        var sellerID = Request.Cookies["SellerID"];
-        List<Store> store = _shopResponsitory.getShopBySellerID(Convert.ToInt32(sellerID)).ToList();
-        List<SellerInfo> sellerInfos = _sellerResponsitory.getSellerInfoBySellerID(Convert.ToInt32(sellerID)).ToList();
-        if (sellerID != null && sellerInfos.Count() != 0) {
-            _accessor?.HttpContext?.Session.SetInt32("SellerID", Convert.ToInt32(sellerID));
-            _accessor?.HttpContext?.Session.SetInt32("SellerShopID", store[0].PK_iStoreID);
-        } else {
-            return Redirect("/seller/portal");
-        }
-        var sessionSellerID = _accessor?.HttpContext?.Session.GetInt32("SellerID");
-        List<Seller> seller = _sellerResponsitory.getSellerAccountByID(Convert.ToInt32(sessionSellerID)).ToList();
-        _accessor?.HttpContext?.Session.SetString("SellerUsername", seller[0].sSellerUsername);
-        return View();
+    public IActionResult Index(int sellerID = 0) {
+        IEnumerable<Seller> sellers = _sellerResponsitory.getSellers();
+        List<Store> store = _shopResponsitory.getShopBySellerID(sellerID).ToList();
+        List<SellerInfo> sellerInfo = _sellerResponsitory.getSellerInfoBySellerID(sellerID).ToList();
+        List<Seller> seller = _sellerResponsitory.getSellerAccountByID(sellerID).ToList();
+        DataViewModel model = new DataViewModel {
+            Sellers = sellers,
+            Store = store,
+            SellerInfo = sellerInfo,
+            Seller = seller
+        };
+        return Ok(model);
     }
 
     [HttpPost]
@@ -67,96 +64,6 @@ public class SellerController : Controller
         IEnumerable<Discount> discounts = _productResponsitory.getDiscounts();
         IEnumerable<TransportPrice> transportPrices = _productResponsitory.getTransportPrice();
         IEnumerable<Product> products = _shopResponsitory.getProductsByShopID(Convert.ToInt32(sessionShopID));
-        string htmlOrdersWaitSettlmentItem = "";
-        string htmlOrdersWaitPickupItem = "";
-        foreach (var item in ordersWaitSettlement) {
-            htmlOrdersWaitSettlmentItem += $" <div class='admin__order-table-body-row'>";
-            htmlOrdersWaitSettlmentItem += $"     <div class='admin__order-table-body-col'>{item.PK_iOrderID}</div>";
-            htmlOrdersWaitSettlmentItem += $"     <div class='admin__order-table-body-col'>{item.sFullName}</div>";
-            htmlOrdersWaitSettlmentItem += $"     <div class='admin__order-table-body-col'>{item.dDate.ToString("dd/MM/yyyy")}</div>";
-            htmlOrdersWaitSettlmentItem += $"     <div class='admin__order-table-body-col'>{item.fTotalPrice.ToString("#,##0.00")}VND</div>"; // Đặt tiền: https://www.phanxuanchanh.com/2021/10/26/dinh-dang-tien-te-trong-c/
-            htmlOrdersWaitSettlmentItem += $"     <div class='admin__order-table-body-col'>{item.sOrderStatusName}</div>";
-            htmlOrdersWaitSettlmentItem += $"     <div class='admin__order-table-body-col payment'>";
-            htmlOrdersWaitSettlmentItem += $"            <div class='admin__order-table-body-col-payment-name'>{item.sPaymentName}</div>";
-            htmlOrdersWaitSettlmentItem += $"     </div>";
-            htmlOrdersWaitSettlmentItem += $"     <div class='admin__order-table-body-col primary'>";
-            htmlOrdersWaitSettlmentItem += $"         30:00";
-            htmlOrdersWaitSettlmentItem += $"     </div>";
-            htmlOrdersWaitSettlmentItem += $" </div>";
-        }
-
-        foreach (var item in ordersWaitPickup) {
-            htmlOrdersWaitPickupItem += $" <div class='admin__order-table-body-row'>";
-            htmlOrdersWaitPickupItem += $"     <div class='admin__order-table-body-col'>{item.PK_iOrderID}</div>";
-            htmlOrdersWaitPickupItem += $"     <div class='admin__order-table-body-col'>{item.sFullName}</div>";
-            htmlOrdersWaitPickupItem += $"     <div class='admin__order-table-body-col'>{item.dDate.ToString("dd/MM/yyyy")}</div>";
-            htmlOrdersWaitPickupItem += $"     <div class='admin__order-table-body-col'>{item.fTotalPrice.ToString("#,##0.00")}VND</div>"; // Đặt tiền: https://www.phanxuanchanh.com/2021/10/26/dinh-dang-tien-te-trong-c/
-            htmlOrdersWaitPickupItem += $"     <div class='admin__order-table-body-col'>{item.sOrderStatusName}</div>";
-            htmlOrdersWaitPickupItem += $"     <div class='admin__order-table-body-col payment'>";
-            htmlOrdersWaitPickupItem += $"            <div class='admin__order-table-body-col-payment-name'>{item.sPaymentName}</div>";
-            htmlOrdersWaitPickupItem += $"     </div>";
-            htmlOrdersWaitPickupItem += $"     <div class='admin__order-table-body-col primary'>";
-            htmlOrdersWaitPickupItem += $"         <a href='javascript:prepareGoodModal({item.PK_iOrderID}, {item.FK_iUserID})' class='admin__order-table-body-col-link'>Chuẩn bị hàng</a>";
-            htmlOrdersWaitPickupItem += $"     </div>";
-            htmlOrdersWaitPickupItem += $" </div>";
-        }
-
-        string htmlOrdersProcessedItem = "";
-        foreach (var item in shippingOrders)
-        {
-            htmlOrdersProcessedItem += $" <div class='admin__order-table-body-row'>";
-            htmlOrdersProcessedItem += $"     <div class='admin__order-table-body-col'>{item.FK_iOrderID}</div>";
-            htmlOrdersProcessedItem += $"     <div class='admin__order-table-body-col'>{item.sFullName}</div>";
-            htmlOrdersProcessedItem += $"     <div class='admin__order-table-body-col'>{item.dDate.ToString("dd/MM/yyyy")}</div>";
-            htmlOrdersProcessedItem += $"     <div class='admin__order-table-body-col'>{item.fTotalPrice.ToString("#,##0.00")}VND</div>"; // Đặt tiền: https://www.phanxuanchanh.com/2021/10/26/dinh-dang-tien-te-trong-c/
-            htmlOrdersProcessedItem += $"     <div class='admin__order-table-body-col'>{item.sOrderStatusName}</div>";
-            htmlOrdersProcessedItem += $"     <div class='admin__order-table-body-col payment'>";
-            htmlOrdersProcessedItem += $"            <div class='admin__order-table-body-col-payment-name'>{item.sPaymentName}</div>";
-            htmlOrdersProcessedItem += $"     </div>";
-            htmlOrdersProcessedItem += $"     <div class='admin__order-table-body-col primary'>";
-            htmlOrdersProcessedItem += $"         <a href='/seller/delivery-note/{item.FK_iOrderID}' class='admin__order-table-body-col-link'>Xem phiếu giao</a>";
-            htmlOrdersProcessedItem += $"     </div>";
-            htmlOrdersProcessedItem += $" </div>";
-        }
-        string htmlProductItem = "";
-        foreach (var item in products) {
-            htmlProductItem += $"    <div class='admin__product-item'>";
-            htmlProductItem += $"        <div class='admin__product-item-input'>";
-            htmlProductItem += $"            <input type='checkbox' class='admin__product-item-input-checkbox'>";
-            htmlProductItem += $"        </div>";
-            htmlProductItem += $"        <div class='admin__product-item-info'>";
-            htmlProductItem += $"           <div class='admin__product-item-img' style='background-image: url(/img/{item.sImageUrl});'></div>";
-            htmlProductItem += $"           <div class='admin__product-item-desc'>";
-            htmlProductItem += $"               <div class='admin__product-item-name'>{item.sProductName}";
-            htmlProductItem += $"                   <div class='cart__body-product-name-progress'>";
-            htmlProductItem += $"                       <div class='cart__body-product-name-progress-line'></div>";
-            htmlProductItem += $"                       <div class='cart__body-product-name-progress-line'></div>";
-            htmlProductItem += $"                   </div>";
-            htmlProductItem += $"               </div>";
-            htmlProductItem += $"               <img src='/img/voucher.png' class='admin__product-item-voucher' alt=''>";
-            htmlProductItem += $"           </div>";
-            htmlProductItem += $"       </div>";
-            htmlProductItem += $"       <div class='admin__product-item-type'>{item.sCategoryName}</div>";
-            htmlProductItem += $"       <div class='admin__product-item-cre-time'>{item.dCreateTime.ToString("dd/MM/yyyy")}</div>";
-            htmlProductItem += $"       <div class='admin__product-item-update-time'>{item.dUpdateTime.ToString("dd/MM/yyyy")}</div>";
-            htmlProductItem += $"       <div class='admin__product-item-qnt'>{item.iQuantity}</div>";
-            htmlProductItem += $"       <div class='admin__product-item-operation'>";
-            htmlProductItem += $"           <div class='admin-tool__more'>";
-            htmlProductItem += $"               <i class='uil uil-ellipsis-v admin-tool__more-icon'></i>";
-            htmlProductItem += $"               <div class='admin-tool__more-container'>";
-            htmlProductItem += $"                   <div class='admin-tool__more-item' onclick='openUpdateProduct({item.PK_iProductID})'>";
-            htmlProductItem += $"                       <i class='uil uil-pen admin-tool__more-item-icon'></i>";
-            htmlProductItem += $"                       <span>Chỉnh sửa</span>";
-            htmlProductItem += $"                   </div>";
-            htmlProductItem += $"                   <div class='admin-tool__more-item' onclick='openDeleteProduct({item.PK_iProductID})'>";
-            htmlProductItem += $"                       <i class='uil uil-trash admin-tool__more-item-icon'></i>";
-            htmlProductItem += $"                       <span>Xoá</span>";
-            htmlProductItem += $"                   </div>";
-            htmlProductItem += $"               </div>";
-            htmlProductItem += $"           </div>";
-            htmlProductItem += $"       </div>";
-            htmlProductItem += $"   </div>";
-        }
 
         SellerViewModel model = new SellerViewModel {
             SellerID = Convert.ToInt32(sessionSellerID),
@@ -165,15 +72,11 @@ public class SellerController : Controller
             OrdersWaitSettlement = ordersWaitSettlement,
             OrdersWaitPickup = ordersWaitPickup,
             OrdersProcessed = shippingOrders,
-            HtmlOrdersWaitSettlementItem = htmlOrdersWaitSettlmentItem,
-            HtmlOrdersWaitPickupItem = htmlOrdersWaitPickupItem,
-            HtmlOrdersProcessedItem = htmlOrdersProcessedItem,
             ShippingOrders = shippingOrders,
             Categories = categories,
             Discounts = discounts,
             TransportPrices = transportPrices,
             Products = products,
-            HtmlProductItem = htmlProductItem
         };
         return Ok(model);
     }
@@ -380,23 +283,11 @@ public class SellerController : Controller
 
     [HttpGet]
     [Route("/seller/login")]
-    public IActionResult Login() {
-        // Lấy Cookie trên trình duyệt
-        var sellerID = Request.Cookies["SellerID"];
-        if (sellerID != null) {
-            _accessor?.HttpContext?.Session.SetInt32("SellerID", Convert.ToInt32(sellerID));
-            return Redirect("/seller");
-        }
-        return View();
-    }
-
-    [HttpPost]
-    [Route("/seller/login")]
     public IActionResult Login(string phone = "", string password = "") {
+        Status status;
         password = _userResponsitory.encrypt(password);
         List<Seller> sellerLogin = _sellerResponsitory.loginAccount(phone, password).ToList();
         List<SellerInfo> sellerInfos = _sellerResponsitory.getSellerInfoByPhone(phone).ToList();
-        Status status;
         if (sellerLogin.Count() == 0) {
             status = new Status {
                 StatusCode = -1,
@@ -407,39 +298,11 @@ public class SellerController : Controller
                 StatusCode = -2,
                 Message = "Tài khoản người bán chưa đầy đủ thông tin!"
             };
-            string sellerUsername = sellerLogin[0].sSellerUsername;
-            string value = sellerLogin[0].PK_iSellerID.ToString();
-            // Tạo cookies cho tài khoản người bán
-            CookieOptions options = new CookieOptions
-            {
-                Expires = DateTime.Now.AddDays(1),
-                Secure = true,
-                HttpOnly = true,
-                SameSite = SameSiteMode.None,
-                Path = "/",
-                IsEssential = true
-            };
-            Response.Cookies.Append("SellerID", value, options);
-            _accessor?.HttpContext?.Session.SetString("SellerUsername", sellerUsername);
         } else {
             status = new Status {
                 StatusCode = 1,
                 Message = "Đăng nhập thành công!"
             };
-            string sellerUsername = sellerLogin[0].sSellerUsername;
-            string value = sellerLogin[0].PK_iSellerID.ToString();
-            // Tạo cookies cho tài khoản người bán
-            CookieOptions options = new CookieOptions
-            {
-                Expires = DateTime.Now.AddDays(1),
-                Secure = true,
-                HttpOnly = true,
-                SameSite = SameSiteMode.None,
-                Path = "/",
-                IsEssential = true
-            };
-            Response.Cookies.Append("SellerID", value, options);
-            _accessor?.HttpContext?.Session.SetString("SellerUsername", sellerUsername);
         }
         SellerViewModel model = new SellerViewModel {
             Status = status
@@ -449,16 +312,16 @@ public class SellerController : Controller
 
     [HttpGet]
     [Route("/seller/register")]
-    public IActionResult Register() {
-        return View();
-    }
-
-    [HttpPost]
-    [Route("/seller/register")]
     public IActionResult Register(string phone = "", string username = "", string password = "") {
         // phone = "0" + phone;
         Status status;
-        if (_sellerResponsitory.registerAccountSeller(phone, username, _userResponsitory.encrypt(password))) {
+        List<Seller> seller = _sellerResponsitory.getPasswordSellerAccountByPhone(phone).ToList();
+        if (seller.Count() != 0) {
+            status = new Status {
+                StatusCode = 1,
+                Message = "Số điện thoại này đã được đăng ký!"
+            };
+        } else if (_sellerResponsitory.registerAccountSeller(phone, username, _userResponsitory.encrypt(password))) {
             status = new Status {
                 StatusCode = 1,
                 Message = "Đăng ký tài khoản người bán thành công!"
@@ -469,42 +332,10 @@ public class SellerController : Controller
                 Message = "Đăng ký tài khoản người bán thất bại!"
             };
         }
-        List<Seller> sellers = _sellerResponsitory.getPasswordSellerAccountByPhone(phone).ToList();
-        string value = sellers[0].PK_iSellerID.ToString();
-        // Tạo cookies cho tài khoản người bán
-        CookieOptions options = new CookieOptions
-        {
-            Expires = DateTime.Now.AddDays(1),
-            Secure = true,
-            HttpOnly = true,
-            SameSite = SameSiteMode.None,
-            Path = "/",
-            IsEssential = true
-        };
-        Response.Cookies.Append("SellerID", value, options);
         SellerViewModel model = new SellerViewModel {
             Status = status
         };
         return Ok(model);
-    }
-
-    [HttpPost]
-    [Route("/seller/check-phone-regis")]
-    public IActionResult PhoneRegis(string phone) {
-        List<Seller> sellers = _sellerResponsitory.getPasswordSellerAccountByPhone(phone).ToList();
-        Status status;
-        if (sellers.Count() != 0) {
-            status = new Status {
-                StatusCode = 0,
-                Message = "Số điện thoại này đã được đăng ký!"
-            };
-        } else {
-            status = new Status {
-                StatusCode = 1,
-                Message = "Số điện thoại này chưa được đăng ký!"
-            };
-        }
-        return Ok(status);
     }
 
     [HttpGet]
@@ -537,12 +368,6 @@ public class SellerController : Controller
 
     [HttpGet]
     [Route("/seller/forgot")]
-    public IActionResult Forgot() {
-        return View();
-    }
-
-    [HttpPost]
-    [Route("/seller/forgot")]
     public IActionResult Forgot(string phone = "") {
         List<Seller> seller = _sellerResponsitory.getPasswordSellerAccountByPhone(phone).ToList();
         Status status;
@@ -566,29 +391,10 @@ public class SellerController : Controller
 
     [HttpGet]
     [Route("/seller/change")]
-    public IActionResult Change() {
-        // Lấy Cookies trên trình duyệt
-        var sellerID = Request.Cookies["SellerID"];
-        if (sellerID != null)
-        {
-            _accessor?.HttpContext?.Session.SetInt32("SellerID", Convert.ToInt32(sellerID));
-        }
-        var sessionSellerID = _accessor?.HttpContext?.Session.GetInt32("SellerID");
-        if (sessionSellerID == null)
-        {
-            _accessor?.HttpContext?.Session.SetInt32("SellerID", 0);
-        }
-        System.Console.WriteLine("sessionSellerID: " + sellerID);
-        return View();
-    }
-
-    [HttpPost]
-    [Route("/seller/change")]
-    public IActionResult Change(string oldPassword = "", string newPassword = "") {
+    public IActionResult Change(int sellerID, string oldPassword = "", string newPassword = "") {
         oldPassword = _userResponsitory.encrypt(oldPassword);
         newPassword = _userResponsitory.encrypt(newPassword);
-        var sessionSellerID = _accessor?.HttpContext?.Session.GetInt32("SellerID");
-        List<Seller> sellerLogin = _sellerResponsitory.checkSellerAccountByIDAndPass(Convert.ToInt32(sessionSellerID), oldPassword).ToList();
+        List<Seller> sellerLogin = _sellerResponsitory.checkSellerAccountByIDAndPass(sellerID, oldPassword).ToList();
         Status status;
         if (sellerLogin.Count() == 0)
         {
@@ -600,7 +406,7 @@ public class SellerController : Controller
         }
         else
         {
-            _sellerResponsitory.changePasswordSellerAccount(Convert.ToInt32(sessionSellerID), newPassword);
+            _sellerResponsitory.changePasswordSellerAccount(sellerID, newPassword);
             status = new Status
             {
                 StatusCode = 1,

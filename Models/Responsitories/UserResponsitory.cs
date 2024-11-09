@@ -86,6 +86,11 @@ public class UserResponsitory : IUserResponsitory
         return _context.UserInfos.FromSqlRaw("EXEC sp_GetUserInfoByID @FK_iUserID", userIDParam);
     }
 
+    public IEnumerable<User> getUsers()
+    {
+        return _context.Users.FromSqlRaw("EXEC sp_GetUsers");
+    }
+
     public IEnumerable<UserInfo> getUsersInfo()
     {
         return _context.UserInfos.FromSqlRaw("EXEC sp_GetUsersInfo");
