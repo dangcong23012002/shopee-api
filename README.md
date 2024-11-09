@@ -45,6 +45,7 @@ http://localhost:5041/product/sort/?categoryID=1&sortType=asc
 ### 4.5. Sản phẩm theo mã danh mục và sắp xếp theo giá giảm dần
 http://localhost:5041/product/sort/?categoryID=1&sortType=desc
 ## 5. Quản lý mua hàng
+### 5.1. Giỏ hàng theo mã tài khoản
 http://localhost:5041/cart?userID=1
 
 
