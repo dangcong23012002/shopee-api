@@ -1,5 +1,6 @@
 public interface ISellerResponsitory
 {
+    IEnumerable<Seller> getSellers();
     IEnumerable<Seller> loginAccount(string phone, string password);
     IEnumerable<Seller> getSellerAccountByID(int sellerID);
     IEnumerable<Seller> getPasswordSellerAccountByPhone(string phone);
