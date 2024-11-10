@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Project.Models.Domain;
 
@@ -285,27 +286,51 @@ public class SellerController : Controller
     [Route("/seller/login")]
     public IActionResult Login(string phone = "", string password = "") {
         Status status;
-        password = _userResponsitory.encrypt(password);
-        List<Seller> sellerLogin = _sellerResponsitory.loginAccount(phone, password).ToList();
-        List<SellerInfo> sellerInfos = _sellerResponsitory.getSellerInfoByPhone(phone).ToList();
-        if (sellerLogin.Count() == 0) {
+        string phoneRegex = @"\+?(09|08|07|06|05|03)\d{8}";
+        if (phone == null && password == null) {
             status = new Status {
                 StatusCode = -1,
-                Message = "Tên đăng nhập hoặc mật khẩu không chính xác!"
+                Message = "Số điện thoại, mật khẩu không được trống!"
             };
-        } else if (sellerInfos.Count() == 0) {
+        } else if (phone == null) {
             status = new Status {
-                StatusCode = -2,
-                Message = "Tài khoản người bán chưa đầy đủ thông tin!"
+                StatusCode = -1,
+                Message = "Số điện thoại không được trống!"
+            };
+        } else if (password == null) {
+            status = new Status {
+                StatusCode = -1,
+                Message = "Mật khẩu không được trống!"
+            };
+        } else if (!Regex.IsMatch(phone, phoneRegex)) {
+            status = new Status {
+                StatusCode = -1,
+                Message = "Số điện thoại phải 10 số, bắt đầu bằng số 0!"
             };
         } else {
-            status = new Status {
-                StatusCode = 1,
-                Message = "Đăng nhập thành công!"
-            };
+            List<Seller> sellerLogin = _sellerResponsitory.loginAccount(phone, password).ToList();
+            List<SellerInfo> sellerInfos = _sellerResponsitory.getSellerInfoByPhone(phone).ToList();
+            if (sellerLogin.Count() == 0) {
+                status = new Status {
+                    StatusCode = -1,
+                    Message = "Số điện thoại hoặc mật khẩu không chính xác!"
+                };
+            } else if (sellerInfos.Count() == 0) {
+                status = new Status {
+                    StatusCode = -2,
+                    Message = "Tài khoản người bán chưa đầy đủ thông tin!"
+                };
+            } else {
+                status = new Status {
+                    StatusCode = 1,
+                    Message = "Đăng nhập thành công!"
+                };
+            }
         }
+        IEnumerable<SellerInfo> sellerInfo = _sellerResponsitory.getSellerInfoByPhoneAndPassword(phone, password);
         SellerViewModel model = new SellerViewModel {
-            Status = status
+            Status = status,
+            SellerInfo = sellerInfo
         };
         return Ok(model);
     }

@@ -15,6 +15,7 @@ public class SellerViewModel
     public IEnumerable<ShippingOrder> OrdersProcessed { get; set; }
     public IEnumerable<OrderDetail> OrderDetailsWaitDelivery { get; set; }
     public IEnumerable<SellerInfo> SellerInfos { get; set; }
+    public IEnumerable<SellerInfo> SellerInfo { get; set; }
     public IEnumerable<ShippingOrder> ShippingOrders { get; set; }
     public IEnumerable<Address> DeliveryAddresses { get; set; }
     public IEnumerable<CategoryModel> Categories { get; set; }

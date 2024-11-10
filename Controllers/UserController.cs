@@ -1,4 +1,5 @@
 using System.Reflection.Metadata;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -41,25 +42,73 @@ public class UserController : Controller {
     [Route("/user/login/{email?}/{password?}")]
     [HttpGet]
     public IActionResult Login(string email = "", string password = "") {
-        string passwordEncrypted = _userResponsitory.encrypt(password);
-        List<User> userLogin = _userResponsitory.login(email, passwordEncrypted).ToList();
+        string regexEmail = @"^[^@\s]+@[^@\s]+\.(com|net|org|gov)$"; // Nguồn: https://uibakery.io/regex-library/email-regex-csharp
+        // string regexPassword = "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$"; Nguồn: https://uibakery.io/regex-library/password-regex-csharp
         Status status;
-        if (userLogin.Count() != 0 ) {
-            status = new Status {
-                StatusCode = 1,
-                Message = "Đăng nhập thành công!"
-            };
-        } else {
+        if (email == null && password == null) {
             status = new Status {
                 StatusCode = -1,
-                Message = "Tên đăng nhập hoặc mật khẩu không chính xác!"
+                Message = "Email, mật khẩu không được trống!"
             };
+        } else if (email == null) {
+            status = new Status {
+                StatusCode = -1,
+                Message = "Email không được trống!"
+            };
+        } else if (password == null) {
+            status = new Status {
+                StatusCode = -1,
+                Message = "Mật khẩu không được trống!"
+            };
+        } else if (!Regex.IsMatch(email, regexEmail)) {
+            status = new Status {
+                StatusCode = -1,
+                Message = "Email phải chứa @.com/@.net/@.org"
+            };
+        } else if (!Regex.IsMatch(password, "^.{8,}$")) {
+            status = new Status {
+                StatusCode = -1,
+                Message = "Mật khẩu phải lớn hơn 8 ký tự"
+            };
+        } else if (!Regex.IsMatch(password, "^(?=.*?[A-Z]).{8,}$")) {
+            status = new Status {
+                StatusCode = -1,
+                Message = "Mật khẩu phải chứa ít nhất một chữ cái tiếng Anh viết hoa!"
+            };
+        } else if (!Regex.IsMatch(password, "^(?=.*?[A-Z])(?=.*?[a-z]).{8,}$")) {
+            status = new Status {
+                StatusCode = -1,
+                Message = "Mật khẩu phải chứa ít nhất một chữ cái tiếng Anh viết thường!"
+            };
+        } else if (!Regex.IsMatch(password, "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$")) {
+            status = new Status {
+                StatusCode = -1,
+                Message = "Mật khẩu phải chứa ít nhất một chữ số!"
+            };
+        } else if (!Regex.IsMatch(password, "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$")) {
+            status = new Status {
+                StatusCode = -1,
+                Message = "Mật khẩu phải chứa ít nhất một ký tự đặc biệt!"
+            };
+        } else {
+            string passwordEncrypted = _userResponsitory.encrypt(password);
+            List<User> userLogin = _userResponsitory.login(email, passwordEncrypted).ToList();
+            if (userLogin.Count() != 0 ) {
+                status = new Status {
+                    StatusCode = 1,
+                    Message = "Đăng nhập thành công!"
+                };
+            } else {
+                status = new Status {
+                    StatusCode = -1,
+                    Message = "Tên đăng nhập hoặc mật khẩu không chính xác!"
+                };
+            }
         }
+        IEnumerable<UserInfo> userInfo = _userResponsitory.getUserInfoByEmailAndPassword(email, password);
         DataViewModel model = new DataViewModel {
             Status = status,
-            RoleID = userLogin[0].FK_iRoleID,
-            UserID = userLogin[0].PK_iUserID,
-            Username = userLogin[0].sUserName,
+            UserInfo = userInfo
         };
         return Ok(model);
     }

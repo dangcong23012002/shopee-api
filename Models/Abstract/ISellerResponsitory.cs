@@ -8,6 +8,7 @@ public interface ISellerResponsitory
     IEnumerable<SellerInfo> getSellerInfoBySellerID(int sellerID);
     IEnumerable<SellerInfo> getSellerInfoByPhone(string phone);
     IEnumerable<SellerInfo> getSellerInfoByShippingOrderID(int shippingOrderID);
+    IEnumerable<SellerInfo> getSellerInfoByPhoneAndPassword(string phone, string password);
     bool changePasswordSellerAccount(int sellerID, string password);
     bool registerAccountSeller(string phone, string username, string password);
 }
