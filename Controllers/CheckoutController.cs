@@ -169,32 +169,26 @@ public class CheckoutController : Controller {
 
     [HttpPost]
     [Route("/checkout/add-to-order")]
-    public IActionResult AddToOrder(double totalPrice, int paymentTypeID, int orderStatusID) {
-        var sessionUserID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        var sessionShopID = _accessor?.HttpContext?.Session.GetInt32("ShopID");
-        List<Order> order = _orderResponsitory.getOrderByID(Convert.ToInt32(sessionUserID), Convert.ToInt32(sessionShopID)).ToList();
+    public IActionResult AddToOrder(int userID, int shopID, int productID, int quantity, double unitPrice, double money, double totalPrice, int paymentTypeID, int orderStatusID) {
+        List<Order> order = _orderResponsitory.getOrderByID(userID, shopID).ToList();
         // Kiểm tra đơn hàng trong ngày của tài khoản đã đăng ký chưa
         int orderID;
         if (order.Count() != 0) {
             orderID = order[0].PK_iOrderID;
         } else {
-            _orderResponsitory.inserOrder(Convert.ToInt32(sessionUserID), Convert.ToInt32(sessionShopID), totalPrice, orderStatusID, paymentTypeID);
-            List<Order> newOrder = _orderResponsitory.getOrderByID(Convert.ToInt32(sessionUserID), Convert.ToInt32(sessionShopID)).ToList();
+            _orderResponsitory.inserOrder(userID, shopID, totalPrice, orderStatusID, paymentTypeID);
+            List<Order> newOrder = _orderResponsitory.getOrderByID(userID, shopID).ToList();
             orderID = newOrder[0].PK_iOrderID;
         }
-        foreach (var item in checkouts) {
-            // Thêm vào chi tiết đơn hàng
-            _orderResponsitory.inserOrderDetail(orderID, item.PK_iProductID, item.iQuantity, item.dUnitPrice, item.dMoney);
-            // Xoá sản phẩm trong giỏ hàng
-            _cartResponsitory.deleteProductInCart(item.PK_iProductID, Convert.ToInt32(sessionUserID));
-        } 
-        // Đặt lại checkouts
-        HttpContext.Session.Set("cart_key", "");
+        // Thêm vào chi tiết đơn hàng
+        _orderResponsitory.inserOrderDetail(orderID, productID, quantity, unitPrice, money);
+        // Xoá sản phẩm trong giỏ hàng
+        _cartResponsitory.deleteProductInCart(productID, userID);
         Status status = new Status {
             StatusCode = 1,
             Message = "Đặt hàng thành công!"
         };
-        CheckoutViewModel model = new CheckoutViewModel {
+        DataViewModel model = new DataViewModel {
             Status = status
         };
         return Ok(model);
