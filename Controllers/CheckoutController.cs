@@ -188,8 +188,11 @@ public class CheckoutController : Controller {
             StatusCode = 1,
             Message = "Đặt hàng thành công!"
         };
+        IEnumerable<OrderDetail> orderDetails = _orderResponsitory.getOrderDetailByOrderID(order[0].PK_iOrderID);
         DataViewModel model = new DataViewModel {
-            Status = status
+            Status = status,
+            Orders = order,
+            OrderDetails = orderDetails
         };
         return Ok(model);
     }
