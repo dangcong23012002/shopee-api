@@ -76,4 +76,10 @@ public class CartResponsitory : ICartReponsitory
         SqlParameter productIDParam = new SqlParameter("@PK_iProductID", productID);
         return _context.CartDetails.FromSqlRaw("EXEC sp_GetInfoCartByProductID @PK_iUserID, @PK_iProductID", userIDParam, productIDParam);
     }
+
+    public IEnumerable<Cart> getCartIDByTime()
+    {
+        SqlParameter createTimeParam = new SqlParameter("@dUpdateTime", DateTime.Now.ToString("dd/MM/yyyy"));
+        return _context.Carts.FromSqlRaw("SET DATEFORMAT dmy EXEC sp_GetCartIDByTime @dUpdateTime", createTimeParam);
+    }
 }
