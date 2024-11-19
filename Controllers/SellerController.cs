@@ -99,59 +99,18 @@ public class SellerController : Controller
         return Ok(model);
     }
 
-    [HttpPost]
+    [HttpPut]
     [Route("/seller/update-product")]
-    public IActionResult UpdateProduct(int productID = 0, int categoryID = 0, int discountID = 0, int transportID = 0, string productName = "", int quantity = 0, string productDesc = "", string imageUrl = "", double price = 0) {
-        var sessionShopID = _accessor?.HttpContext?.Session.GetInt32("SellerShopID");
-        _productResponsitory.updateProduct(productID, Convert.ToInt32(sessionShopID), categoryID, discountID, transportID, productName, quantity, productDesc, imageUrl, price);
+    public IActionResult UpdateProduct(int productID = 0, int shopID = 0, int categoryID = 0, int discountID = 0, int transportID = 0, string productName = "", int quantity = 0, string productDesc = "", string imageUrl = "", double price = 0) {
+        _productResponsitory.updateProduct(productID, shopID, categoryID, discountID, transportID, productName, quantity, productDesc, imageUrl, price);
         Status status = new Status {
             StatusCode = 1,
             Message = "Cập nhật sản phẩm thành công"
         };
-        IEnumerable<Product> products = _shopResponsitory.getProductsByShopID(Convert.ToInt32(sessionShopID));
-        string htmlProductItem = "";
-        foreach (var item in products) {
-            htmlProductItem += $"    <div class='admin__product-item'>";
-            htmlProductItem += $"        <div class='admin__product-item-input'>";
-            htmlProductItem += $"            <input type='checkbox' class='admin__product-item-input-checkbox'>";
-            htmlProductItem += $"        </div>";
-            htmlProductItem += $"        <div class='admin__product-item-info'>";
-            htmlProductItem += $"           <div class='admin__product-item-img' style='background-image: url(/img/{item.sImageUrl});'></div>";
-            htmlProductItem += $"           <div class='admin__product-item-desc'>";
-            htmlProductItem += $"               <div class='admin__product-item-name'>{item.sProductName}";
-            htmlProductItem += $"                   <div class='cart__body-product-name-progress'>";
-            htmlProductItem += $"                       <div class='cart__body-product-name-progress-line'></div>";
-            htmlProductItem += $"                       <div class='cart__body-product-name-progress-line'></div>";
-            htmlProductItem += $"                   </div>";
-            htmlProductItem += $"               </div>";
-            htmlProductItem += $"               <img src='/img/voucher.png' class='admin__product-item-voucher' alt=''>";
-            htmlProductItem += $"           </div>";
-            htmlProductItem += $"       </div>";
-            htmlProductItem += $"       <div class='admin__product-item-type'>{item.sCategoryName}</div>";
-            htmlProductItem += $"       <div class='admin__product-item-cre-time'>{item.dCreateTime.ToString("dd/MM/yyyy")}</div>";
-            htmlProductItem += $"       <div class='admin__product-item-update-time'>{item.dUpdateTime.ToString("dd/MM/yyyy")}</div>";
-            htmlProductItem += $"       <div class='admin__product-item-qnt'>{item.iQuantity}</div>";
-            htmlProductItem += $"       <div class='admin__product-item-operation'>";
-            htmlProductItem += $"           <div class='admin-tool__more'>";
-            htmlProductItem += $"               <i class='uil uil-ellipsis-v admin-tool__more-icon'></i>";
-            htmlProductItem += $"               <div class='admin-tool__more-container'>";
-            htmlProductItem += $"                   <div class='admin-tool__more-item' onclick='openUpdateProduct({item.PK_iProductID})'>";
-            htmlProductItem += $"                       <i class='uil uil-pen admin-tool__more-item-icon'></i>";
-            htmlProductItem += $"                       <span>Chỉnh sửa</span>";
-            htmlProductItem += $"                   </div>";
-            htmlProductItem += $"                   <div class='admin-tool__more-item' onclick='openDeleteProduct({item.PK_iProductID})'>";
-            htmlProductItem += $"                       <i class='uil uil-trash admin-tool__more-item-icon'></i>";
-            htmlProductItem += $"                       <span>Xoá</span>";
-            htmlProductItem += $"                   </div>";
-            htmlProductItem += $"               </div>";
-            htmlProductItem += $"           </div>";
-            htmlProductItem += $"       </div>";
-            htmlProductItem += $"   </div>";
-        }
+        IEnumerable<Product> products = _shopResponsitory.getProductsByShopID(shopID);
         SellerViewModel model = new SellerViewModel {
             Status = status,
-            Products = products,
-            HtmlProductItem = htmlProductItem
+            Products = products
         };
         return Ok(model);
     }
@@ -215,7 +174,7 @@ public class SellerController : Controller
         return Ok(model);
     }
 
-    [HttpPost]
+    [HttpDelete]
     [Route("/seller/delete-product")]
     public IActionResult DeleteProduct(int productID = 0) {
         Status status;
@@ -235,49 +194,9 @@ public class SellerController : Controller
         }
         var sessionShopID = _accessor?.HttpContext?.Session.GetInt32("SellerShopID");
         IEnumerable<Product> products = _shopResponsitory.getProductsByShopID(Convert.ToInt32(sessionShopID));
-        string htmlProductItem = "";
-        foreach (var item in products) {
-            htmlProductItem += $"    <div class='admin__product-item'>";
-            htmlProductItem += $"        <div class='admin__product-item-input'>";
-            htmlProductItem += $"            <input type='checkbox' class='admin__product-item-input-checkbox'>";
-            htmlProductItem += $"        </div>";
-            htmlProductItem += $"        <div class='admin__product-item-info'>";
-            htmlProductItem += $"           <div class='admin__product-item-img' style='background-image: url(/img/{item.sImageUrl});'></div>";
-            htmlProductItem += $"           <div class='admin__product-item-desc'>";
-            htmlProductItem += $"               <div class='admin__product-item-name'>{item.sProductName}";
-            htmlProductItem += $"                   <div class='cart__body-product-name-progress'>";
-            htmlProductItem += $"                       <div class='cart__body-product-name-progress-line'></div>";
-            htmlProductItem += $"                       <div class='cart__body-product-name-progress-line'></div>";
-            htmlProductItem += $"                   </div>";
-            htmlProductItem += $"               </div>";
-            htmlProductItem += $"               <img src='/img/voucher.png' class='admin__product-item-voucher' alt=''>";
-            htmlProductItem += $"           </div>";
-            htmlProductItem += $"       </div>";
-            htmlProductItem += $"       <div class='admin__product-item-type'>{item.sCategoryName}</div>";
-            htmlProductItem += $"       <div class='admin__product-item-cre-time'>{item.dCreateTime.ToString("dd/MM/yyyy")}</div>";
-            htmlProductItem += $"       <div class='admin__product-item-update-time'>{item.dUpdateTime.ToString("dd/MM/yyyy")}</div>";
-            htmlProductItem += $"       <div class='admin__product-item-qnt'>{item.iQuantity}</div>";
-            htmlProductItem += $"       <div class='admin__product-item-operation'>";
-            htmlProductItem += $"           <div class='admin-tool__more'>";
-            htmlProductItem += $"               <i class='uil uil-ellipsis-v admin-tool__more-icon'></i>";
-            htmlProductItem += $"               <div class='admin-tool__more-container'>";
-            htmlProductItem += $"                   <div class='admin-tool__more-item' onclick='openUpdateProduct({item.PK_iProductID})'>";
-            htmlProductItem += $"                       <i class='uil uil-pen admin-tool__more-item-icon'></i>";
-            htmlProductItem += $"                       <span>Chỉnh sửa</span>";
-            htmlProductItem += $"                   </div>";
-            htmlProductItem += $"                   <div class='admin-tool__more-item' onclick='openDeleteProduct({item.PK_iProductID})'>";
-            htmlProductItem += $"                       <i class='uil uil-trash admin-tool__more-item-icon'></i>";
-            htmlProductItem += $"                       <span>Xoá</span>";
-            htmlProductItem += $"                   </div>";
-            htmlProductItem += $"               </div>";
-            htmlProductItem += $"           </div>";
-            htmlProductItem += $"       </div>";
-            htmlProductItem += $"   </div>";
-        }
         SellerViewModel model = new SellerViewModel {
             Status = status,
-            Products = products,
-            HtmlProductItem = htmlProductItem
+            Products = products
         };
         return Ok(model);
     }

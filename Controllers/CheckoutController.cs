@@ -20,52 +20,45 @@ public class CheckoutController : Controller {
         _orderResponsitory = orderResponsitory;
     }
 
-    List<Checkout> checkouts => HttpContext.Session.Get<List<Checkout>>("cart_key") ?? new List<Checkout>();
-
     [HttpGet]
-    [Route("/checkout")]
-    public IActionResult Index() {
-        // Lấy Cookies trên trình duyệt
-        var userID = Request.Cookies["UserID"];
-        if (userID != null)
-        {
-            _accessor?.HttpContext?.Session.SetInt32("UserID", Convert.ToInt32(userID));
-        }
-        return View(); 
-    }
-
-    [HttpPost]
     [Route("/checkout/get-data")]
-    public IActionResult GetData() {
-        var sessionUserID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        List<UserInfo> userInfos = _userResponsitory.getUserInfoByID(Convert.ToInt32(sessionUserID)).ToList();
-        List<Address> addresses = _checkoutResponsitory.checkAddressAccount(Convert.ToInt32(sessionUserID)).ToList();
+    public IActionResult Index(int userID = 0) {
+        List<UserInfo> userInfos = _userResponsitory.getUserInfoByID(userID).ToList();
+        List<Address> addresses = _checkoutResponsitory.checkAddressAccount(userID).ToList();
         List<City> cities = _checkoutResponsitory.getCities().ToList();
         List<District> districts = _checkoutResponsitory.getDistricts().ToList();
         List<AddressChoose> addressChooses = _checkoutResponsitory.getAddressChoose().ToList();
-        List<Payment> paymentTypes = _checkoutResponsitory.checkPaymentsTypeByUserID(Convert.ToInt32(sessionUserID)).ToList();
+        List<Payment> paymentTypes = _checkoutResponsitory.checkPaymentsTypeByUserID(userID).ToList();
         CheckoutViewModel model = new CheckoutViewModel {
             UserInfos = userInfos,
-            Checkouts = checkouts,
             Addresses = addresses,
             Cities = cities,
             Districts = districts,
             AddressChooses = addressChooses,
             PaymentTypes = paymentTypes
         };
-        return Ok(model);
+        return Ok(model); 
     }
 
     [HttpPost]
-    [Route("/checkout/crud-address")]
-    public IActionResult CRUDAddress(string phone = "", string address = "") {
-        var sessionUserID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        _checkoutResponsitory.insertAddressAccount(Convert.ToInt32(sessionUserID), phone, address);
-        List<Address> addresses = _checkoutResponsitory.checkAddressAccount(Convert.ToInt32(sessionUserID)).ToList();
-        Status status = new Status {
-            StatusCode = 1,
-            Message = "Thêm địa chỉ thành công"
-        };
+    [Route("/checkout/add-address")]
+    public IActionResult AddAddress(int userID = 0, string phone = "", string address = "") {
+        List<User> user = _userResponsitory.checkUserLogin(userID).ToList();
+        Status status;
+        if (user.Count() == 0) {
+            status = new Status {
+                StatusCode = -1,
+                Message = "Bạn phải đăng nhập mới được thêm vào giỏ hàng!"
+            };
+        } else {
+            _checkoutResponsitory.insertAddressAccount(userID, phone, address);
+            status = new Status
+            {
+                StatusCode = 1,
+                Message = "Thêm địa chỉ thành công"
+            };
+        }
+        List<Address> addresses = _checkoutResponsitory.checkAddressAccount(userID).ToList();
         CheckoutViewModel model = new CheckoutViewModel {
             Status = status,
             Addresses = addresses
@@ -73,11 +66,14 @@ public class CheckoutController : Controller {
         return Ok(model);
     }
 
-    [HttpPost]
+    [HttpGet]
     [Route("/checkout/address-detail")]
     public IActionResult AddressDetail(int addressID, int userID) {
         var address = _checkoutResponsitory.getAddressesByID(addressID, userID);
-        return Ok(address);
+        DataViewModel model = new DataViewModel {
+            Address = address
+        };
+        return Ok(model);
     }
 
     [HttpPost]
@@ -93,42 +89,6 @@ public class CheckoutController : Controller {
         CheckoutViewModel model = new CheckoutViewModel {
             Addresses = addresses,
             Status = status
-        };
-        return Ok(model);
-    }
-
-    [HttpPost]
-    [Route("/checkout/add-to-checkout")]
-    public IActionResult AddToCheckout(int productID, int shopID, int quantity) {
-        _accessor?.HttpContext?.Session.SetInt32("ShopID", shopID);
-        var sessionUserID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        var sessionShopID = _accessor?.HttpContext?.Session.GetInt32("ShopID");
-        System.Console.WriteLine("Session ShopID: " + sessionShopID);
-        var cartsCheckout = checkouts;
-        var item = cartsCheckout.SingleOrDefault(p => p.PK_iProductID == productID);
-        if (item == null) {
-            List<CartDetail> product = _cartResponsitory.getProductCartByID(Convert.ToInt32(sessionUserID), productID).ToList();
-            if (product == null) {
-                System.Console.WriteLine($"Không tìm thấy hàng hoá có mã {productID}");
-            }
-            item = new Checkout {
-                PK_iProductID = product[0].PK_iProductID,
-                sProductName = product[0].sProductName,
-                sImageUrl = product[0].sImageUrl,
-                dUnitPrice = product[0].dUnitPrice, // https://www.phanxuanchanh.com/2021/10/26/dinh-dang-tien-te-trong-c/
-                iQuantity = quantity,
-                // Toán tử if else rút gọn trong c#: https://laptrinhvb.net/bai-viet/chuyen-de-csharp/---Csharp----Huong-dan-su-dung-Ternary-Operator-(rut-gon-cau-truc-re-nhanh-if-else)/23b78c4150dae226.html
-                dMoney = (product[0].dDiscount == 1) ? (product[0].dUnitPrice * quantity) + product[0].dTransportPrice : product[0].dUnitPrice * quantity * (1 - product[0].dDiscount) + product[0].dTransportPrice,
-                dTransportPrice = product[0].dTransportPrice,
-                dDiscount = product[0].dDiscount
-            };
-            cartsCheckout.Add(item);
-        }
-        // Đặt lại danh sách session sản phẩm thanh toán 
-        HttpContext.Session.Set("cart_key", cartsCheckout);
-        CheckoutViewModel model = new CheckoutViewModel {
-            Checkouts = checkouts,
-            SessionShopID = Convert.ToInt32(sessionShopID)
         };
         return Ok(model);
     }

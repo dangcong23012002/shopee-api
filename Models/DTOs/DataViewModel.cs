@@ -14,6 +14,7 @@ public class DataViewModel
     public IEnumerable<CartDetail> CartDetails { get; set; }
     public IEnumerable<Order> Orders { get; set; }
     public IEnumerable<OrderDetail> OrderDetails { get; set; }
+    public IEnumerable<Address> Address { get; set; }
     public int RoleID { get; set; }
     public int UserID { get; set; }
     public string Username { get; set; }

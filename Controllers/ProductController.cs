@@ -20,17 +20,21 @@ public class ProductController : Controller {
     }
 
     [HttpGet]
-    [Route("/product/{parentCategoryID?}")]
-    public IActionResult Index(int parentCategoryID = 0, int currentPage = 1) {
+    [Route("/product/{parentCategoryID?}/{categoryID?}")]
+    public IActionResult Index(int parentCategoryID = 0, int categoryID = 0, int currentPage = 1) {
         IEnumerable<Product> products;
         IEnumerable<Product> productsByCategoryID;
-        products = _productResponsitory.getProductsByParentCategoryID(parentCategoryID);
+        if (categoryID == 0) {
+            products = _productResponsitory.getProductsByParentCategoryID(parentCategoryID);
+        } else {
+            products = _productResponsitory.getProductsByCategoryID(categoryID);
+        }
         int totalRecord = products.Count();
         int pageSize = 10;
         int totalPage = (int) Math.Ceiling(totalRecord / (double) pageSize);
         products = products.Skip((currentPage - 1) * pageSize).Take(pageSize);
         IEnumerable<Store> stores = _shopResponsitory.getShopByParentCategoryID(Convert.ToInt32(parentCategoryID));
-        IEnumerable<Category> categories = _homeResponsitory.getCategoriesByParentCategoryID(parentCategoryID);
+        IEnumerable<Category> categories = _homeResponsitory.getCategoriesByParentCategoryID(Convert.ToInt32(parentCategoryID));
         // Vì mình lấy layout của _Layout của kiểu là @model ProducdViewModel nó sẽ chung cho tất cả các trang, ta lấy riêng nó sẽ lỗi
         ShopeeViewModel model = new ShopeeViewModel {
             Products = products,
@@ -93,7 +97,7 @@ public class ProductController : Controller {
     }
 
     [HttpGet]
-    [Route("/product/similar/{productID?}")]
+    [Route("/product/similar/{productSimilarID?}")]
     public IActionResult Similar(int productSimilarID = 0, int currentPage = 1, int categorySimilar = 0) {
         List<Product> product = _productResponsitory.getProductByID(productSimilarID).ToList();
         List<Store> store = _shopResponsitory.getShopByProductID(productSimilarID).ToList();
