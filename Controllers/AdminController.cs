@@ -370,22 +370,28 @@ public class AdminController : Controller {
         return Ok(model);
     }
 
-    [HttpGet]
+    [HttpPut]
     [Route("/admin/confirm-order")]
-    public IActionResult ConfirmOrder() {
-        var sessionOrderID = _accessor?.HttpContext?.Session.GetInt32("CurrentOrderID");
+    public IActionResult ConfirmOrder(int orderID = 0) {
         Status status;
-        List<Order> order = _orderResponsitory.getOrderWaitSettlementByOrderID(Convert.ToInt32(sessionOrderID)).ToList();
-        if (_orderResponsitory.confirmOrderAboutWaitPickup(Convert.ToInt32(sessionOrderID), order[0].FK_iUserID)) {
+        List<Order> order = _orderResponsitory.getOrderWaitSettlementByOrderID(orderID).ToList();
+        if (order.Count() == 0) {
             status = new Status {
-                StatusCode = 1,
-                Message = "Xác nhận đơn hàng thành công!"
+                StatusCode = -1,
+                Message = "Đơn hàng này không có trạng thái mới đặt!"
             };
         } else {
-            status = new Status {
-                StatusCode = 1,
-                Message = "Xác nhận đơn hàng thất bại!"
-            };
+            if (_orderResponsitory.confirmOrderAboutWaitPickup(orderID, order[0].FK_iUserID)) {
+                status = new Status {
+                    StatusCode = 1,
+                    Message = "Xác nhận đơn hàng thành công!"
+                };
+            } else {
+                status = new Status {
+                    StatusCode = 1,
+                    Message = "Xác nhận đơn hàng thất bại!"
+                };
+            }
         }
         return Ok(status);
     }
