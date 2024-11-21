@@ -396,9 +396,6 @@ public class SellerController : Controller
                 Message = "Phiếu đã được tạo thành công!"
             };
         }
-        // Lấy đơn hàng giao vừa được thêm
-        List<ShippingOrder> shippingOrder = _shippingOrderRepository.getShippingOrderByOrderID(orderID).ToList();
-        _accessor?.HttpContext?.Session.SetInt32("CurrentShippingOrderID", shippingOrder[0].PK_iShippingOrderID);
         return Ok(status);
     }
 
@@ -418,13 +415,11 @@ public class SellerController : Controller
         return View();
     }
 
-    [HttpPost]
+    [HttpGet]
     [Route("/seller/delivery-api")]
-    public IActionResult DeliveryNoteAPI() {
-        var sessionShippingOrderID = _accessor?.HttpContext?.Session.GetInt32("CurrentShippingOrderID");
-        var sessionSellerID = _accessor?.HttpContext?.Session.GetInt32("SellerID");
-        IEnumerable<SellerInfo> sellerInfos = _sellerResponsitory.getSellerInfoBySellerID(Convert.ToInt32(sessionSellerID));
-        List<ShippingOrder> shippingOrders = _shippingOrderRepository.getShippingOrderByID(Convert.ToInt32(sessionShippingOrderID)).ToList();
+    public IActionResult DeliveryNoteAPI(int sellerID = 0, int shippingOrderID = 0) {
+        IEnumerable<SellerInfo> sellerInfos = _sellerResponsitory.getSellerInfoBySellerID(sellerID);
+        List<ShippingOrder> shippingOrders = _shippingOrderRepository.getShippingOrderByID(shippingOrderID).ToList();
         IEnumerable<Order> ordersWaitDelivery = _orderResponsitory.getOrderWaitDeliveryByOrderID(shippingOrders[0].FK_iOrderID);
         IEnumerable<OrderDetail> orderDetailsWaitDelivery = _orderResponsitory.getOrderDetailWaitDeliveyByOrderID(shippingOrders[0].FK_iOrderID);
         IEnumerable<Address> deliveryAddresses = _checkoutResponsitory.getAddressAccountByOrderID(shippingOrders[0].FK_iOrderID);
