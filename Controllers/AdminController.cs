@@ -41,45 +41,9 @@ public class AdminController : Controller {
         _sellerResponsitory = sellerResponsitory;
     }
 
+    [HttpGet]
     [Route("/admin")]
     public IActionResult Index() {
-        // Lấy Cookies trên trình duyệt
-        var userID = Request.Cookies["UserID"];
-        if (userID != null)
-        {
-            _accessor?.HttpContext?.Session.SetInt32("UserID", Convert.ToInt32(userID));
-        } else {
-            return Redirect("/user/login");
-        }
-        var sessionUserID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        if (sessionUserID != null)
-        {
-            List<User> users = _userResponsitory.checkUserLogin(Convert.ToInt32(sessionUserID)).ToList();
-            _accessor?.HttpContext?.Session.SetString("UserName", users[0].sUserName);
-            _accessor?.HttpContext?.Session.SetInt32("RoleID", users[0].FK_iRoleID);
-        }
-        else
-        {
-            _accessor?.HttpContext?.Session.SetString("UserName", "");
-        }
-        return View();
-    }
-
-    [HttpPost]
-    public IActionResult Index(Category category) {
-        if (!ModelState.IsValid) {
-            return View(category);
-        }
-        TempData["msg"] = "Thêm thể loại thành công!";
-        return RedirectToAction("Index");
-    }
-
-    [HttpPost]
-    [Route("/admin/get-data")]
-    public IActionResult GetData() {
-        var sessionUserID = _accessor?.HttpContext?.Session.GetInt32("UserID");
-        var sellerUsername = _accessor?.HttpContext?.Session.GetString("UserName");
-        var sessionRoleID = _accessor?.HttpContext?.Session.GetInt32("RoleID");
         IEnumerable<Order> ordersWaitSettlment = _adminResponsitory.getOrdersWaitSettlment().ToList();
         IEnumerable<Order> ordersWaitPickup = _adminResponsitory.getOrderWaitPickup();
         IEnumerable<Order> ordersPicking = _adminResponsitory.getOrdersPicking();
@@ -88,109 +52,20 @@ public class AdminController : Controller {
         IEnumerable<Industry> industries = _categoryResponsitory.getIndustries();
         IEnumerable<CategoryModel> categories = _categoryResponsitory.getAllCategories();
         IEnumerable<UserInfo> userInfos = _userResponsitory.getUsersInfo();
-        string htmlWaitSettlmentItem = "";
-        foreach (var item in ordersWaitSettlment) {
-            htmlWaitSettlmentItem += $" <div class='admin__order-table-body-row'>";
-            htmlWaitSettlmentItem += $"     <div class='admin__order-table-body-col'>{item.PK_iOrderID}</div>";
-            htmlWaitSettlmentItem += $"     <div class='admin__order-table-body-col'>{item.sFullName}</div>";
-            htmlWaitSettlmentItem += $"     <div class='admin__order-table-body-col'>{item.sStoreName}</div>";
-            htmlWaitSettlmentItem += $"     <div class='admin__order-table-body-col'>{item.dDate.ToString("dd/MM/yyyy")}</div>";
-            htmlWaitSettlmentItem += $"     <div class='admin__order-table-body-col'>{item.fTotalPrice.ToString("#,##0.00")}VND</div>"; // Đặt tiền: https://www.phanxuanchanh.com/2021/10/26/dinh-dang-tien-te-trong-c/
-            htmlWaitSettlmentItem += $"     <div class='admin__order-table-body-col'>{item.sOrderStatusName}</div>";
-            htmlWaitSettlmentItem += $"     <div class='admin__order-table-body-col payment'>";
-            htmlWaitSettlmentItem += $"            <div class='admin__order-table-body-col-payment-name'>{item.sPaymentName}</div>";
-            htmlWaitSettlmentItem += $"     </div>";
-            htmlWaitSettlmentItem += $"     <div class='admin__order-table-body-col primary'>";
-            htmlWaitSettlmentItem += $"         <a href='/admin/order/{item.PK_iOrderID}' class='admin__order-table-body-col-link'>Chi tiết</a>";
-            htmlWaitSettlmentItem += $"     </div>";
-            htmlWaitSettlmentItem += $" </div>";
-        }
-        string htmlPickingItem = "";
-        foreach (var item in ordersPicking) {
-            htmlPickingItem += $" <div class='admin__order-table-body-row'>";
-            htmlPickingItem += $"     <div class='admin__order-table-body-col'>{item.PK_iOrderID}</div>";
-            htmlPickingItem += $"     <div class='admin__order-table-body-col'>{item.sFullName}</div>";
-            htmlPickingItem += $"     <div class='admin__order-table-body-col'>{item.sStoreName}</div>";
-            htmlPickingItem += $"     <div class='admin__order-table-body-col'>{item.dDate.ToString("dd/MM/yyyy")}</div>";
-            htmlPickingItem += $"     <div class='admin__order-table-body-col'>{item.fTotalPrice.ToString("#,##0.00")}VND</div>"; // Đặt tiền: https://www.phanxuanchanh.com/2021/10/26/dinh-dang-tien-te-trong-c/
-            htmlPickingItem += $"     <div class='admin__order-table-body-col'>{item.sOrderStatusName}</div>";
-            htmlPickingItem += $"     <div class='admin__order-table-body-col payment'>{item.sPaymentName}</div>";
-            htmlPickingItem += $"     <div class='admin__order-table-body-col primary'>";
-            htmlPickingItem += $"         <a href='/admin/bill/{item.PK_iOrderID}' class='admin__order-table-body-col-link'>Chi tiết</a>";
-            htmlPickingItem += $"     </div>";
-            htmlPickingItem += $" </div>";
-        }
-
-        string htmlDeliveringItem = "";
-        foreach (var item in ordersDelivering) {
-            htmlDeliveringItem += $" <div class='admin__order-table-body-row'>";
-            htmlDeliveringItem += $"     <div class='admin__order-table-body-col'>ĐH{item.PK_iOrderID}</div>";
-            htmlDeliveringItem += $"     <div class='admin__order-table-body-col'>{item.sStoreName}</div>";
-            htmlDeliveringItem += $"     <div class='admin__order-table-body-col'>{item.dDate.ToString("dd/MM/yyyy")}</div>";
-            htmlDeliveringItem += $"     <div class='admin__order-table-body-col'>{item.fTotalPrice.ToString("#,##0.00")}VND</div>"; // Đặt tiền: https://www.phanxuanchanh.com/2021/10/26/dinh-dang-tien-te-trong-c/
-            htmlDeliveringItem += $"     <div class='admin__order-table-body-col'>{item.sOrderStatusName}</div>";
-            htmlDeliveringItem += $"     <div class='admin__order-table-body-col primary'>";
-            htmlDeliveringItem += $"         <a href='/admin/bill/{item.PK_iOrderID}' class='admin__order-table-body-col-link'>Chi tiết</a>";
-            htmlDeliveringItem += $"     </div>";
-            htmlDeliveringItem += $" </div>";
-        }
-
-        string htmlUsersInfoItem = "";
-        foreach (var item in userInfos) {
-            htmlUsersInfoItem += $" <div class='admin__order-table-body-row'>";
-            htmlUsersInfoItem += $"     <div class='admin__order-table-body-col'>{item.sUserName}</div>";
-            htmlUsersInfoItem += $"     <div class='admin__order-table-body-col'>{item.sEmail}</div>";
-            htmlUsersInfoItem += $"     <div class='admin__order-table-body-col'>{item.sDescription}</div>";
-            htmlUsersInfoItem += $"     <div class='admin__order-table-body-col'>{item.dUpdateTime.ToString("dd/MM/yyyy")}</div>";
-            htmlUsersInfoItem += $"     <div class='admin__order-table-body-col islock'>";
-            if (item.iIsLock == 0) {
-                htmlUsersInfoItem += $"     <div class='admin-account__control active'>"; 
-                htmlUsersInfoItem += $"         <div class='admin-account__control-circle'></div>";      
-                htmlUsersInfoItem += $"     </div>";
-            } else {
-                htmlUsersInfoItem += $"     <div class='admin-account__control'>"; 
-                htmlUsersInfoItem += $"         <div class='admin-account__control-circle'></div>";      
-                htmlUsersInfoItem += $"     </div>";
-            }
-            htmlUsersInfoItem += $"     </div>";
-            htmlUsersInfoItem += $"     <div class='admin__order-table-body-col del'>";
-            htmlUsersInfoItem += $"         <div class='admin-account__more' onclick='showAccountTool(event)'>";
-            htmlUsersInfoItem += $"             <i class='uil uil-ellipsis-v admin-account__more-icon'></i>";
-            htmlUsersInfoItem += $"             <div class='admin-account__more-container'>";
-            htmlUsersInfoItem += $"                 <div class='admin-account__more-item' onclick='openUpdateAccount()'>";
-            htmlUsersInfoItem += $"                     <i class='uil uil-pen admin-account__more-item-icon'></i>";
-            htmlUsersInfoItem += $"                     <span>Chỉnh sửa</span>";
-            htmlUsersInfoItem += $"                 </div>";
-            htmlUsersInfoItem += $"                 <div class='admin-account__more-item' onclick='openDeleteAccount()'>";
-            htmlUsersInfoItem += $"                     <i class='uil uil-trash admin-account__more-item-icon'></i>";
-            htmlUsersInfoItem += $"                     <span>Xoá</span>";
-            htmlUsersInfoItem += $"                 </div>";
-            htmlUsersInfoItem += $"             </div>";
-            htmlUsersInfoItem += $"         </div>";
-            htmlUsersInfoItem += $"     </div>";
-            htmlUsersInfoItem += $" </div>";
-        }
         AdminViewModel model = new AdminViewModel {
             OrdersWaitSettlment = ordersWaitSettlment,
-            HtmlWaitSettlmentItem = htmlWaitSettlmentItem,
             OrdersWaitPickup = ordersWaitPickup,
             OrdersPicking = ordersPicking,
-            HtmlPickingItem = htmlPickingItem,
             OrdersDelivering = ordersDelivering,
-            HtmlDeliveringItem = htmlDeliveringItem,
             OrdersCompleted = ordersCompleted,
             Industries = industries,
             Categories = categories,
             UserInfos = userInfos,
-            HtmlUsersInfoItem = htmlUsersInfoItem,
-            RoleID = Convert.ToInt32(sessionRoleID),
-            UserID = Convert.ToInt32(sessionUserID),
-            Username = sellerUsername
         };
         return Ok(model);
     }
 
-    [HttpPost]
+    [HttpGet]
     [Route("/admin/detail-api")]
     public IActionResult Detail(int industryID = 0, int categoryID = 0) {
         IEnumerable<Industry> industry = _categoryResponsitory.getIndustryByID(industryID);

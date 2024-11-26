@@ -63,15 +63,32 @@ public class ProductController : Controller {
                 Message = "Có sản phẩm mã là: " + productID
             };
         }
+        IEnumerable<Favorite> favorites = _productResponsitory.getFavoritesByProductID(productID);
+        IEnumerable<Favorite> favorite = _productResponsitory.getFavoritesByProductIDAndUserID(productID, userID);
         List<Store> store = _shopResponsitory.getShopByProductID(productID).ToList();
-        IEnumerable<UserInfo> userInfos = _userResponsitory.checkUserInfoByUserID(Convert.ToInt32(userID));
-        IEnumerable<Reviewer> reviewers = _productResponsitory.getReviewerByProductID(Convert.ToInt32(userID));
+        IEnumerable<UserInfo> userInfos = _userResponsitory.checkUserInfoByUserID(userID);
+        IEnumerable<Reviewer> reviewers = _productResponsitory.getReviewerByProductID(productID);
         ProductViewModel model = new ProductViewModel {
             Status = status,
             Products = product,
             Store = store,
             UserInfos = userInfos,
-            Reviewers = reviewers
+            Reviewers = reviewers,
+            Favorite = favorite,
+            Favorites = favorites
+        };
+        return Ok(model);
+    }
+
+    [HttpGet]
+    [Route("/product/reviewer-detail/{reviewerID?}")]
+    public IActionResult ReviewerDetail(int reviewerID = 0) {
+        int productID = Convert.ToInt32(_accessor?.HttpContext?.Session.GetInt32("CurrentProductID"));
+        IEnumerable<Product> product = _productResponsitory.getProductByID(productID);
+        IEnumerable<Reviewer> reviewer = _productResponsitory.getReviewerByID(reviewerID);
+        ProductViewModel model = new ProductViewModel {
+            Product = product,
+            Reviewer = reviewer
         };
         return Ok(model);
     }
