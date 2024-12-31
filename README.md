@@ -6,7 +6,7 @@ API là các phương thức, giao thức kết nối với các thư viện và
 # API Quản lý một số module
 ## 1. Quản lý tài khoản
 ### 1.1. Lấy tất cả tài khoản
-http://shopeeme.somee.com/user/
+http://sme.somee.com/user/
 ### 1.2. Lấy tài khoản với mã
 http://shopeeme.somee.com/user?userID=1
 ### 1.3. Đăng nhập tài khoản
